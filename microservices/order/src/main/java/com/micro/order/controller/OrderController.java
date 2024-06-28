@@ -19,10 +19,10 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     public String placeOrder(@RequestBody OrderRequestDto orderRequest) {
-        orderService.placeOrder(orderRequest);
-        return "Order Placed";
+       return orderService.placeOrder(orderRequest);
+
     }
 
     @GetMapping
