@@ -34,5 +34,10 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("test")
+    public String test() {
+        return "test message from order";
+    }
+
 
 }

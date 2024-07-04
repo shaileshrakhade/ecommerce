@@ -1,0 +1,62 @@
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://admin:admin@localhost:8761/eureka
+
+server:
+  port: 8080
+## Product Service Route
+spring:
+  application:
+    name: API-GATEWAY
+  cloud:
+    gateway:
+      routes:
+        ## Authentication Service Route
+        - id: AUTHENTICATION-SERVICE
+          uri: lb://AUTHENTICATION-SERVICE
+          predicates:
+            - Path=/auth/**
+
+        ## Discovery Service Static Route
+        - id: DISCOVERY-SERVICE-STATIC
+          uri: http://admin:admin@${app.eureka-server}:8761
+          predicates:
+            - Path=/eureka/**
+
+        ## Discovery Service Route request is eureka/web then move it to
+        - id: DISCOVERY-SERVICE
+          uri: http://admin:admin@${app.eureka-server}:8761
+          predicates:
+            - Path=/eureka/web
+          # directly route moving from one URL to the base url [we pass http://localhost:8080/eureka/web & it move to http://localhost:8761]
+          filters:
+            - SetPath=/
+        ## Product Service Route
+        - id: PRODUCT-SERVICE
+          uri: lb://PRODUCT-SERVICE
+          predicates:
+            - Path=/product
+          filters:
+            - AuthenticationFilter
+
+        ## Order Service Route
+        - id: ORDER-SERVICE
+          uri: lb://ORDER-SERVICE
+          predicates:
+            - Path=/order
+          filters:
+            - AuthenticationFilter
+
+        ## Inventory Service Route
+        - id: INVENTORY-SERVICE
+          uri: lb://INVENTORY-SERVICE
+          predicates:
+            - Path=/inventory
+          filters:
+            - AuthenticationFilter
+
+
+
+

@@ -1,1 +1,8 @@
 /microservices/.idea/
+/microservices/product/target/
+/microservices/order/target/
+/microservices/inventory/target/
+/microservices/discovery-server/target/
+/microservices/authentication-service/target/
+/microservices/api-gateway/target/
+/.idea/
