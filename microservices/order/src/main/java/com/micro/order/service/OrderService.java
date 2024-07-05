@@ -3,14 +3,18 @@ package com.micro.order.service;
 import com.micro.order.dto.InventoryResponse;
 import com.micro.order.dto.OrderRequestDto;
 import com.micro.order.dto.OrderResponseDto;
+import com.micro.order.event.OrderPlacedEvent;
 import com.micro.order.model.Order;
 import com.micro.order.model.OrderLineItems;
 import com.micro.order.repository.OrderRepository;
 import com.micro.order.utility.MapToDto;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -26,38 +30,56 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MapToDto mapToDto;
     private final WebClient.Builder webClientBuilder;
+    private final ObservationRegistry observationRegistry;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public String placeOrder(OrderRequestDto orderRequestDto) {
         Order order = new Order();
         order.setOrderNumber(UUID.randomUUID().toString());
+        //multiple product order request
         List<OrderLineItems> orderLineItems = orderRequestDto.getOrderLineItemsDtoList()
                 .stream()
                 .map(mapToDto::mapOrderLineItemsDtoToOrderLineItems)
                 .toList();
         order.setOrderLineItems(orderLineItems);
-
+        //multiple sku was handel
         List<String> skuCodes = order.getOrderLineItems().stream()
                 .map(OrderLineItems::getSkuCode).toList();
 
-        InventoryResponse[] inventoryResponse = webClientBuilder.build().get().uri("http://INVENTORY-SERVICE/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
-                .retrieve().bodyToMono(InventoryResponse[].class)
-                .block();
-        assert inventoryResponse != null;
-        log.info("inventoryResponse :: {}", Arrays.stream(inventoryResponse).toList());
-        if (inventoryResponse.length > 0) {
-            boolean allProductInStock = Arrays.stream(inventoryResponse).allMatch(InventoryResponse::isInStock);
-            if (allProductInStock) {
-                return "Order Placed! Order Number is :: " + orderRepository.save(order).getOrderNumber();
+        // Call Inventory Service, and place order if product is in stock
+        Observation inventoryServiceObservation = Observation.createNotStarted("inventory-service-lookup",
+                this.observationRegistry);
+        log.info("Calling the INVENTORY-SERVICE");
+        inventoryServiceObservation.lowCardinalityKeyValue("call", "INVENTORY-SERVICE");
+        //inventoryServiceObservation is used to maintain the same SPAN ID to tract it's single request
+        return inventoryServiceObservation.observe(() -> {
+            InventoryResponse[] inventoryResponse = webClientBuilder.build().get().uri("http://INVENTORY-SERVICE/inventory",
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                    .retrieve().bodyToMono(InventoryResponse[].class)
+                    .block();
+            assert inventoryResponse != null;
+            log.info("inventoryResponse :: {}", Arrays.stream(inventoryResponse).toList());
+            if (inventoryResponse.length > 0) {
+                //check all product is in stock then only placed the order
+                boolean allProductInStock = Arrays.stream(inventoryResponse).allMatch(InventoryResponse::isInStock);
+                if (allProductInStock) {
+                    orderRepository.save(order);
+                    applicationEventPublisher.publishEvent(new OrderPlacedEvent(this, order.getOrderNumber()));
+                    log.info("Order placed & notification was send...");
+                    return "Order Placed! Order Number is :: " + order.getOrderNumber();
+                } else {
+                    log.info("Product is out of stock...");
+                    return "Sorry.. Product is not in stock, please try again latter.";
+                }
             } else {
-                return "Product is not in stock, please try again latter.";
+                log.info("product is not in list...");
+                return "Product is not Valid, please try again latter.";
             }
-        } else {
-            return "Product is not Valid, please try again latter.";
-        }
+        });
     }
 
     public List<OrderResponseDto> getOrders() {
+        log.info("fetching all placed Orders...");
         List<Order> orders = orderRepository.findAll();
         return orders.stream()
                 .map(mapToDto::mapOrderToOrderResponseDto).toList();

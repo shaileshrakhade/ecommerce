@@ -20,11 +20,11 @@ public class InventoryController {
         return inventoryService.isInStock(skuCode);
     }
 
-//    @GetMapping
-//    @ResponseStatus(HttpStatus.OK)
-//    public  List<InventoryResponse> getInventoryStockList()
-//    {
-//        return  null;// inventoryService.getInventorys();
-//    }
+    @GetMapping("/all")
+    @ResponseStatus(HttpStatus.OK)
+    public  List<InventoryResponse> getAllInventory()
+    {
+        return  inventoryService.findAllInventory();
+    }
 
 }

@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.micro.notification.NotificationServiceApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 27.38 s -- in com.micro.notification.NotificationServiceApplicationTests

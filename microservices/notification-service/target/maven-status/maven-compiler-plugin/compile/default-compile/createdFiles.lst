@@ -1,0 +1,3 @@
+com\micro\notification\NotificationServiceApplication.class
+com\micro\notification\OrderPlacedEvent.class
+com\micro\notification\ManualConfiguration.class

@@ -34,12 +34,14 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                     authHeader = authHeader.substring(7);
                 }
                 try {
-                   //REST call to AUTH service to validate token
-                   //  template.getForObject("http://AUTHENTICATION-SERVICE//validate?token" + authHeader, String.class);
+                    //REST call to AUTH service to validate token
+                    //  template.getForObject("http://AUTHENTICATION-SERVICE//validate?token" + authHeader, String.class);
                     // here we directly create same class to validate token on the basic of secret key only
                     //if you want to check in DB as well is this validate username then we need to call the auth request
-                    if (!jwtService.isTokenValid(authHeader))
+                    if (!jwtService.isTokenValid(authHeader)) {
+                        log.error("Token Information Is Not Valid.");
                         throw new RuntimeException("Token Information Is Not Valid.");
+                    }
 
                 } catch (Exception e) {
                     log.error("invalid access...!:: {}", e.getMessage());
