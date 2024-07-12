@@ -2,6 +2,7 @@
 ---
 version: '3.7'
 services:
+#  zookeeper send heart-bit to receive message from broker
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
     container_name: zookeeper
@@ -27,7 +28,9 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
-  ## Zipkin
+  ## Zipkin distributed tracing system.
+  ##  It helps gather timing data needed to troubleshoot latency problems
+  ##  in service architectures we can track the call hierarchy.
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin

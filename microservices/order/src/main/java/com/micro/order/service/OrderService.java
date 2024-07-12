@@ -1,5 +1,6 @@
 package com.micro.order.service;
 
+import com.micro.order.constant.AppConstant;
 import com.micro.order.dto.InventoryResponse;
 import com.micro.order.dto.OrderRequestDto;
 import com.micro.order.dto.OrderResponseDto;
@@ -11,10 +12,8 @@ import com.micro.order.utility.MapToDto;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -31,7 +30,7 @@ public class OrderService {
     private final MapToDto mapToDto;
     private final WebClient.Builder webClientBuilder;
     private final ObservationRegistry observationRegistry;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final KafkaTemplate<String, Object> stringObjectKafkaTemplate;
 
     public String placeOrder(OrderRequestDto orderRequestDto) {
         Order order = new Order();
@@ -64,7 +63,12 @@ public class OrderService {
                 boolean allProductInStock = Arrays.stream(inventoryResponse).allMatch(InventoryResponse::isInStock);
                 if (allProductInStock) {
                     orderRepository.save(order);
-                    applicationEventPublisher.publishEvent(new OrderPlacedEvent(this, order.getOrderNumber()));
+                    try {
+                        stringObjectKafkaTemplate.send(AppConstant.ORDER_NOTIFICATION_TOPIC, new OrderPlacedEvent(order.getOrderNumber()));
+                    }catch (Exception e)
+                    {
+                        log.error(e.getMessage());
+                    }
                     log.info("Order placed & notification was send...");
                     return "Order Placed! Order Number is :: " + order.getOrderNumber();
                 } else {
