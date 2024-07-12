@@ -7,7 +7,7 @@
         <groupId>com.micro</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>order</artifactId>
+    <artifactId>order-service</artifactId>
     <name>order</name>
     <description>order service</description>
     <properties>
@@ -71,6 +71,11 @@
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 </project>

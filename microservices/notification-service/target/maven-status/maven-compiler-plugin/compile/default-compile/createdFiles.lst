@@ -1,3 +1,4 @@
 com\micro\notification\NotificationServiceApplication.class
-com\micro\notification\OrderPlacedEvent.class
-com\micro\notification\ManualConfiguration.class
+com\micro\notification\config\KafkaListeners.class
+com\micro\notification\constant\AppConstant.class
+com\micro\notification\dto\OrderPlacedEvent.class

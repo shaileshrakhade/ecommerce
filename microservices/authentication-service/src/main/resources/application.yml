@@ -2,11 +2,5 @@ spring:
   application:
     name: AUTHENTICATION-SERVICE
 
-eureka:
-  client:
-    service-url:
-      defaultZone : http://admin:admin@localhost:8761/eureka
-
-
 server:
   port: 0

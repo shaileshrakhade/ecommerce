@@ -17,3 +17,6 @@ COPY --from=builder extracted/application/ ./
 EXPOSE 8080
 #cmd to run java program
 ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+
+
+#mvn clean compile jib:build

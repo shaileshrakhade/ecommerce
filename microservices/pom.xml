@@ -60,7 +60,7 @@
                     </excludes>
                 </configuration>
             </plugin>
-<!--         jib-maven-plugin it was use & build container image & send it to the docker hub   -->
+<!--         jib-maven-plugin it was use & build container image & send it to the docker hub  without using any docker file [username & password need to provided in settings.xml] -->
             <plugin>
                 <groupId>com.google.cloud.tools</groupId>
                 <artifactId>jib-maven-plugin</artifactId>

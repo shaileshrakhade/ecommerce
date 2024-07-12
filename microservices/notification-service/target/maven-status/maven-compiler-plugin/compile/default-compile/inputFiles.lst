@@ -1,3 +1,4 @@
-G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\ManualConfiguration.java
+G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\config\KafkaListeners.java
+G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\constant\AppConstant.java
+G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\dto\OrderPlacedEvent.java
 G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\NotificationServiceApplication.java
-G:\java\ecommerce\microservices\notification-service\src\main\java\com\micro\notification\OrderPlacedEvent.java
