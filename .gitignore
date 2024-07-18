@@ -6,3 +6,5 @@
 /microservices/authentication-service/target/
 /microservices/api-gateway/target/
 /.idea/
+/microservices/DockerVolumes/
+/microservices/notification-service/target/

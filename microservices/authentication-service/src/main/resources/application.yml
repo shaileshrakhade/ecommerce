@@ -1,6 +1,2 @@
-spring:
-  application:
-    name: AUTHENTICATION-SERVICE
 
-server:
-  port: 0
+

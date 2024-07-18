@@ -1,61 +1,83 @@
+# mvn jib:build
 # command to run this file [docker compose up -d]
+# to pull the updated  images [docker-compose pull]
 # docker log -f [container name]
+#to access it outside of container i.e. local machine  [docker exec -it test-mysql bash][mysql -u root -p]
+
 ---
 version: '3.7'
 services:
+  ## when we use  postgres db
+#  postgres-order:
+#    container_name: postgres-order
+#    image: postgres
+#    environment:
+#      POSTGRES_DB: order-service
+#      POSTGRES_USER: root
+#      POSTGRES_PASSWORD: root
+#      PGDATA: /data/postgres
+#    volumes:
+#      - ./DockerVolumes/postgres-order:/data/postgres
+#    expose:
+#      - "5431"
+#    ports:
+#      - "5431:5431"
+#    command: -p 5431
+#    restart: always
   ## MySQL Docker Compose Config
   # for the auth service
-  postgres-auth:
-    container_name: postgres-auth
-    image: postgres
+  mysql-auth:
+    container_name: mysql-auth
+    image: mysql
     environment:
-      POSTGRES_DB: auth-service
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      PGDATA: /data/postgres
+      MYSQL_DATABASE: auth-service
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./postgres-auth:/data/postgres
-    expose:
-      - "5433"
+      - ./DockerVolumes/mysql-auth:/var/lib/mysql
     ports:
-      - "5433:5433"
-    command: -p 5433
+      - "33061:3306"
+    expose:
+      - "3306"
     restart: always
+  ## postgres Docker Compose Config
   # for the order service
-  postgres-order:
-    container_name: postgres-order
-    image: postgres
+  mysql-inventory:
+    container_name: mysql-inventory
+    image: mysql
     environment:
-      POSTGRES_DB: order-service
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      PGDATA: /data/postgres
+      MYSQL_DATABASE: inventory-service
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./postgres-order:/data/postgres
-    expose:
-      - "5431"
+      - ./DockerVolumes/mysql-inventory:/var/lib/mysql
     ports:
-      - "5431:5431"
-    command: -p 5431
+      - "33062:3306"
+    expose:
+      - "3306"
     restart: always
 # for the inventory - service
-  postgres-inventory:
-    container_name: postgres-inventory
-    image: postgres
+  mysql-order:
+    container_name: mysql-order
+    image: mysql
     environment:
-      POSTGRES_DB: inventory-service
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      PGDATA: /data/postgres
+      MYSQL_DATABASE: order-service
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
     volumes:
-      - ./postgres-inventory:/data/postgres
+      - ./DockerVolumes/mysql-order:/var/lib/mysql
     ports:
-      - "5432:5432"
+      - "33063:3306"
+    expose:
+      - "3306"
     restart: always
 
   ## Mongo Docker Compose Config
   mongo:
-      container_name: mongo
+      container_name: mongo-product
       image: mongo:4.4.14-rc0-focal
       restart: always
       ports:
@@ -63,54 +85,57 @@ services:
       expose:
         - "27017"
       volumes:
-        - ./mongo-data:/data/db
+        - ./DockerVolumes/mongo-data:/data/db
 
 
-#  zookeeper send heart-bit to receive message from broker
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.0.1
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  broker:
-    image: confluentinc/cp-kafka:7.0.1
-    container_name: broker
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-
-  ## Zipkin distributed tracing system.
-  ##  It helps gather timing data needed to troubleshoot latency problems
-  ##  in service architectures we can track the call hierarchy.
+##  zookeeper send heart-bit to receive message from broker
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:7.0.1
+#    container_name: zookeeper
+#    ports:
+#      - "2181:2181"
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#      ZOOKEEPER_TICK_TIME: 2000
+#
+#  broker:
+#    image: confluentinc/cp-kafka:7.0.1
+#    container_name: broker
+#    ports:
+#      - "9092:9092"
+#    depends_on:
+#      - zookeeper
+#    environment:
+#      KAFKA_BROKER_ID: 1
+#      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+#      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+#
+#  ## Zipkin distributed tracing system.
+#  ##  It helps gather timing data needed to troubleshoot latency problems
+#  ##  in service architectures we can track the call hierarchy.
   zipkin:
     image: openzipkin/zipkin
     container_name: zipkin
     ports:
       - "9411:9411"
 
-    ## Eureka Server
+
+  ## Eureka Server
   discovery-server:
       image: shaileshrakhade/discovery-server:latest
       container_name: discovery-server
       ports:
         - "8761:8761"
+      expose:
+        - "8761"
       environment:
         - SPRING_PROFILES_ACTIVE=docker
-      depends_on:
-        - zipkin
+#      depends_on:
+#        - zipkin
 
   ## API Gateway
   api-gateway:
@@ -133,14 +158,16 @@ services:
     image: shaileshrakhade/authentication-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-auth:5433/auth-service
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-auth:3307/auth-service
     depends_on:
-      - postgres-auth
-      - zipkin
+      - mysql-auth
+#      - zipkin
       - discovery-server
       - api-gateway
 
     ## Product-Service Docker Compose Config
+
+  ##product service
   product-service:
       container_name: product-service
       image: shaileshrakhade/product-service:latest
@@ -158,11 +185,11 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
 #      - option if we want to override from property file we can pass as command
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/order-service
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/order-service
     depends_on:
-      - postgres-order
-      - broker
-      - zipkin
+      - mysql-order
+#      - broker
+#      - zipkin
       - discovery-server
       - api-gateway
 
@@ -172,53 +199,53 @@ services:
     image: shaileshrakhade/inventory-service:latest
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-inventory:5432/inventory-service
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-inventory:5432/inventory-service
     depends_on:
-      - postgres-inventory
+      - mysql-inventory
       - discovery-server
       - api-gateway
 
-  ## Notification-Service Docker Compose Config
-  notification-service:
-    container_name: notification-service
-    image: shaileshrakhade/notification-service:latest
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      - zipkin
-      - broker
-      - discovery-server
-      - api-gateway
-
-
-  ## Prometheus is use the actuator endpoint for better matrix of application
-  prometheus:
-    image: prom/prometheus:v2.37.1
-    container_name: prometheus
-    restart: always
-    ports:
-      - "9090:9090"
-    volumes:
-#      - copy the file from host machine to container
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - product-service
-      - inventory-service
-      - order-service
-      - notification-service
-      - authentication-service
-
-  ## grafana is  use Prometheus endpoint & show the matrix of application
-  grafana:
-    image: grafana/grafana-oss:8.5.2
-    container_name: grafana
-    restart: always
-    ports:
-      - "3000:3000"
-    links:
-      - prometheus:prometheus
-    volumes:
-      - ./grafana:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=password
+#  ## Notification-Service Docker Compose Config
+#  notification-service:
+#    container_name: notification-service
+#    image: shaileshrakhade/notification-service:latest
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=docker
+#    depends_on:
+#      - zipkin
+#      - broker
+#      - discovery-server
+#      - api-gateway
+#
+#
+#  ## Prometheus is use the actuator endpoint for better matrix of application
+#  prometheus:
+#    image: prom/prometheus:v2.37.1
+#    container_name: prometheus
+#    restart: always
+#    ports:
+#      - "9090:9090"
+#    volumes:
+##      - copy the file from host machine to container
+#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+#    depends_on:
+#      - product-service
+#      - inventory-service
+#      - order-service
+#      - notification-service
+#      - authentication-service
+#
+#  ## grafana is  use Prometheus endpoint & show the matrix of application
+#  grafana:
+#    image: grafana/grafana-oss:8.5.2
+#    container_name: grafana
+#    restart: always
+#    ports:
+#      - "3000:3000"
+#    links:
+#      - prometheus:prometheus
+#    volumes:
+#      - ./DockerVolumes/grafana:/var/lib/grafana
+#    environment:
+#      - GF_SECURITY_ADMIN_USER=admin
+#      - GF_SECURITY_ADMIN_PASSWORD=admin

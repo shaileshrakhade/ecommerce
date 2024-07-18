@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: 'authentication_service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: [ 'authentication-service:0' ]
+      - targets: [ 'authentication-service:8080' ]
         labels:
           application: 'authentication Service Application'
           
@@ -14,27 +14,27 @@ scrape_configs:
   - job_name: 'product_service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['product-service:0']
+      - targets: ['product-service:8080']
         labels:
           application: 'Product Service Application'
 
   - job_name: 'order_service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['order-service:0']
+      - targets: ['order-service:8080']
         labels:
           application: 'Order Service Application'
 
   - job_name: 'inventory_service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['inventory-service:0']
+      - targets: ['inventory-service:8080']
         labels:
           application: 'Inventory Service Application'
 
   - job_name: 'notification_service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['notification-service:0']
+      - targets: ['notification-service:8080']
         labels:
           application: 'Notification Service Application'
