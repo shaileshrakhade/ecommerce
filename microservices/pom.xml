@@ -73,6 +73,10 @@
                     <to>
 <!--                        send that images to provided location i.e. docker hub-->
                         <image>registry.hub.docker.com/shaileshrakhade/${project.artifactId}</image>
+                        <tags>
+                            <tag>latest</tag>
+                            <tag>${project.version}</tag>
+                        </tags>
                     </to>
                 </configuration>
                 <executions>
