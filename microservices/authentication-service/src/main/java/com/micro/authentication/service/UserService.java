@@ -1,6 +1,7 @@
 package com.micro.authentication.service;
 
 import com.micro.authentication.config.CustomUserDetailsService;
+import com.micro.authentication.customeExceptions.UsernameAlreadyExistCustomeException;
 import com.micro.authentication.dto.UserCredential;
 import com.micro.authentication.dto.UserDetailsDto;
 import com.micro.authentication.model.User;
@@ -21,13 +22,13 @@ public class UserService {
     private final JwtService jwtService;
     private final CustomUserDetailsService customUserDetailsService;
 
-    public Long createUser(UserDetailsDto userDetailsDto) {
+    public User createUser(UserDetailsDto userDetailsDto) {
         User user = User.builder()
                 .email(userDetailsDto.getEmail())
                 .name(userDetailsDto.getName())
                 .password(passwordEncoder.encode(userDetailsDto.getPassword()))
                 .build();
-        return userRepository.save(user).getId();
+        return userRepository.save(user);
     }
 
     public Optional<UserCredential> getUserByEmail(String email) {
@@ -43,10 +44,16 @@ public class UserService {
     }
 
     public boolean validateToken(String token) {
-        if (!jwtService.isTokenExpired(token)) {
+        if (!jwtService.isTokenExpired(token))
             return getUserByEmail(jwtService.extractUsername(token)).isPresent();
-        } else {
-            return false;
+
+        return false;
+    }
+
+    public void isUserExist(String username) throws UsernameAlreadyExistCustomeException {
+        if(userRepository.findByEmail(username).isPresent())
+        {
+            throw new UsernameAlreadyExistCustomeException();
         }
     }
 }

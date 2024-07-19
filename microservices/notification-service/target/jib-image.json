@@ -1,1 +1,1 @@
-{"image":"registry.hub.docker.com/shaileshrakhade/notification-service","imageId":"sha256:fdd8f5a10cc43579767c83dac0eef50f199500705be657bd915a307a621e71a4","imageDigest":"sha256:8fdb4eb5b224e4cfaade19ad798b35bd196ac4ce9377fef762008875aeac38ef","tags":["latest"]}
+{"image":"registry.hub.docker.com/shaileshrakhade/notification-service","imageId":"sha256:fdd8f5a10cc43579767c83dac0eef50f199500705be657bd915a307a621e71a4","imageDigest":"sha256:8fdb4eb5b224e4cfaade19ad798b35bd196ac4ce9377fef762008875aeac38ef","tags":["1.0-SNAPSHOT","latest"]}

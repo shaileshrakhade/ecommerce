@@ -1,5 +1,7 @@
 package com.micro.authentication.controller;
 
+import com.micro.authentication.customeExceptions.InvalidTokenCustomeException;
+import com.micro.authentication.customeExceptions.UsernameAlreadyExistCustomeException;
 import com.micro.authentication.dto.UserCredential;
 import com.micro.authentication.dto.UserDetailsDto;
 import com.micro.authentication.service.UserService;
@@ -21,42 +23,37 @@ public class UserController {
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("register")
-    public String createUser(@RequestBody UserDetailsDto userDetails) {
-        try {
-            Long id = 0L;
-            id = userService.createUser(userDetails);
-            if (id > 0)
-                return "User register successfully.";
-            else throw new RuntimeException("User Not Register try again latter.");
-        } catch (Exception e) {
-            log.error("Having Trouble with Registration :: {}", e.getMessage());
-            return new RuntimeException("Having Trouble try again after some time").getMessage();
-        }
+    public String createUser(@RequestBody UserDetailsDto userDetails) throws UsernameAlreadyExistCustomeException {
+     // if the emailed already exist then throw the exception
+        userService.isUserExist(userDetails.getEmail());
+        String username = userService.createUser(userDetails).getEmail();
+        return "User register successfully with username :: " + username;
     }
 
     @PostMapping("token")
-    public String getGenerate(@RequestBody UserCredential userCredential) {
+    public String getGenerate(@RequestBody UserCredential userCredential) throws UsernameNotFoundException {
         try {
             Authentication authentication = authenticationManager
                     .authenticate(new UsernamePasswordAuthenticationToken(userCredential.getUsername(), userCredential.getPassword()));
-            if (authentication.isAuthenticated()) {
+            if (authentication.isAuthenticated())
                 return userService.generateToken(userCredential.getUsername());
-            } else {
-                throw new UsernameNotFoundException("User Not Found");
-            }
+
         } catch (Exception e) {
-            log.error("User Not valid :: {}", e.getMessage());
-            return e.getMessage();
+            log.error(e.getMessage());
+            throw new UsernameNotFoundException("");
         }
+
+        return "";
     }
 
     @GetMapping("validate")
-    public boolean validateToken(@RequestParam("token") String token) {
+    public boolean validateToken(@RequestParam("token") String token) throws InvalidTokenCustomeException {
         try {
             return userService.validateToken(token);
         } catch (Exception e) {
-            log.error("Token is not valid :: {}", e.getMessage());
-            return false;
+            log.error(e.getMessage());
+            throw new InvalidTokenCustomeException();
         }
+
     }
 }
