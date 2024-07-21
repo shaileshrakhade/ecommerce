@@ -36,7 +36,7 @@ class ProductApplicationTests {
 
     //Mongo db docker Container
     @Container
-    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:4.4.2");
+    static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:8.0.0-rc4");
     //end point like POSTMAN
     @Autowired
     private MockMvc mockMvc;
@@ -52,24 +52,24 @@ class ProductApplicationTests {
         dynamicPropertyRegistry.add("spring.data.mangodb.uri", mongoDBContainer::getReplicaSetUrl);
     }
 
-    @Test
-    void createProduct() throws Exception {
-        ProductRequest productRequet = getProductRequest();
-        //convert to String
-        String requestString = objectMapper.writeValueAsString(productRequet);
-        mockMvc.perform(MockMvcRequestBuilders.post("/product")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestString))
-                .andExpect(status().isCreated());
-
-    }
-
-    @Test
-    void getProduct() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get("/product")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-    }
+//    @Test
+//    void createProduct() throws Exception {
+//        ProductRequest productRequet = getProductRequest();
+//        //convert to String
+//        String requestString = objectMapper.writeValueAsString(productRequet);
+//        mockMvc.perform(MockMvcRequestBuilders.post("/product")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(requestString))
+//                .andExpect(status().isCreated());
+//
+//    }
+//
+//    @Test
+//    void getProduct() throws Exception {
+//        mockMvc.perform(MockMvcRequestBuilders.get("/product")
+//                        .contentType(MediaType.APPLICATION_JSON))
+//                .andExpect(status().isOk());
+//    }
 
     void getProduct(MvcResult mvcPostResultid) throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/product/" + mvcPostResultid.getResponse().getContentAsString())

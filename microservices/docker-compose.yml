@@ -1,144 +1,75 @@
-# mvn jib:build
-# command to run this file [docker compose up -d]
-# to pull the updated  images [docker-compose pull]
-# docker log -f [container name]
-#to access it outside of container i.e. local machine  [docker exec -it test-mysql bash][mysql -u root -p]
+#=================== Docker compose important command  ===============================
+  # to build the all microservices & push into docker hub [mvn jib:build]
+  # to run docker compose file [docker compose up -d]
+  # to pull images from docker hub [docker compose pull]
+  # to see the logs from container [docker log -f CONTAINER-NAME]
+  # to access container shell outside of container(local machine) [docker exec -it mysql-order bash]
+  # to inter into mysql mode [mysql -u root -p root]
 
 ---
 version: '3.7'
 services:
-  ## when we use  postgres db
-  postgres-order:
-    container_name: postgres-inventory
-    image: postgres
+  #=================== Business Microservices Containers  ===============================
+  ## Authentication Service Docker image Config
+  authentication-service:
+    container_name: authentication-service
+    image: shaileshrakhade/authentication-service:latest
     environment:
-      POSTGRES_DB: inventory-service
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      PGDATA: /data/postgres
-    volumes:
-      - ./DockerVolumes/postgres-inventory:/data/postgres
-    expose:
-      - "5432"
-    ports:
-      - "5432:5431"
-    command: -p 5431
-    restart: always
+      - SPRING_PROFILES_ACTIVE=docker
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-auth:33061/auth-service
+    depends_on:
+      - mysql-auth
+      - api-gateway
 
-  ## MySQL Docker Compose Config
-  # for the auth service
-  mysql-auth:
-    container_name: mysql-auth
-    image: mysql
-    environment:
-      MYSQL_DATABASE: auth-service
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./DockerVolumes/mysql-auth:/var/lib/mysql
-    ports:
-      - "33061:3306"
-    expose:
-      - "3306"
-    restart: always
-  ## postgres Docker Compose Config
-  # for the order service
-  mysql-inventory:
-    container_name: mysql-inventory
-    image: mysql
-    environment:
-      MYSQL_DATABASE: inventory-service
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./DockerVolumes/mysql-inventory:/var/lib/mysql
-    ports:
-      - "33062:3306"
-    expose:
-      - "3306"
-    restart: always
-# for the inventory - service
-  mysql-order:
-    container_name: mysql-order
-    image: mysql
-    environment:
-      MYSQL_DATABASE: order-service
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./DockerVolumes/mysql-order:/var/lib/mysql
-    ports:
-      - "33063:3306"
-    expose:
-      - "3306"
-    restart: always
+    ## Product-Service Docker Compose Config
 
-  ## Mongo Docker Compose Config
-  mongo:
-      container_name: mongo-product
-      image: mongo:4.4.14-rc0-focal
-      restart: always
-      ports:
-        - "27017:27017"
-      expose:
-        - "27017"
-      volumes:
-        - ./DockerVolumes/mongo-data:/data/db
-
-
-##  zookeeper send heart-bit to receive message from broker
-#  zookeeper:
-#    image: confluentinc/cp-zookeeper:7.0.1
-#    container_name: zookeeper
-#    ports:
-#      - "2181:2181"
-#    environment:
-#      ZOOKEEPER_CLIENT_PORT: 2181
-#      ZOOKEEPER_TICK_TIME: 2000
-#
-#  broker:
-#    image: confluentinc/cp-kafka:7.0.1
-#    container_name: broker
-#    ports:
-#      - "9092:9092"
-#    depends_on:
-#      - zookeeper
-#    environment:
-#      KAFKA_BROKER_ID: 1
-#      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://broker:29092
-#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-#      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-#      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-#
-#  ## Zipkin distributed tracing system.
-#  ##  It helps gather timing data needed to troubleshoot latency problems
-#  ##  in service architectures we can track the call hierarchy.
-  zipkin:
-    image: openzipkin/zipkin
-    container_name: zipkin
-    ports:
-      - "9411:9411"
-
-
-  ## Eureka Server
-  discovery-server:
-      image: shaileshrakhade/discovery-server:latest
-      container_name: discovery-server
-      ports:
-        - "8761:8761"
-      expose:
-        - "8761"
+  ## Product Service Docker image Config
+  product-service:
+      container_name: product-service
+      image: shaileshrakhade/product-service:latest
       environment:
         - SPRING_PROFILES_ACTIVE=docker
-#      depends_on:
-#        - zipkin
+      depends_on:
+        - mongo-product
+        - api-gateway
 
-  ## API Gateway
+  ## Order Service Docker image Config
+  order-service:
+    container_name: order-service
+    image: shaileshrakhade/order-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+#      - option if we want to override from property file we can pass as command
+#      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-auth:33062/order_service
+    depends_on:
+      - mysql-order
+      - api-gateway
+#      - notification-service
+#      - inventory-service
+
+  ## Inventory Service Docker image Config
+  inventory-service:
+    container_name: inventory-service
+    image: shaileshrakhade/inventory-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - postgres-inventory
+      - api-gateway
+
+  ## Notification-Service Docker Compose Config
+  notification-service:
+    container_name: notification-service
+    image: shaileshrakhade/notification-service:latest
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - kafka-broker
+      - api-gateway
+
+  #=================== API GATEWAY  ===============================
+  ## API Gateway will give the single entry point for all the microservices api (all api moving from API-Gateway)
+  # we have multiple applications so there are multiple hostname as well as port name, so all traffic come to API-Gateway & it will move the forward as per the request.
   api-gateway:
     image: shaileshrakhade/api-gateway:latest
     container_name: api-gateway
@@ -150,103 +81,162 @@ services:
       - SPRING_PROFILES_ACTIVE=docker
       - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
     depends_on:
+      - discovery-server
+
+  #=================== Service Discovery  ===============================
+  ## Eureka Server as service discovery
+  # we have multiple microservice it very complex to communicate each other & to know the address so discovery server will provide the feature
+  # to register all microservice with it & communicate each other by application its name
+  discovery-server:
+    image: shaileshrakhade/discovery-server:latest
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    expose:
+      - "8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
       - zipkin
-      - discovery-server
 
-  ## Auth-Service Docker Compose Config
-  authentication-service:
-    container_name: authentication-service
-    image: shaileshrakhade/authentication-service:latest
+  #=================== SQL,NO-SQL Databases containers use for Micro-Service ===============================
+  ## Databases used in microservices
+  # Postgres DB for inventory microservice
+  postgres-inventory:
+    container_name: postgres-inventory
+    image: postgres:12
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-#      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-auth:3307/auth-service
-    depends_on:
-      - mysql-auth
-#      - zipkin
-      - discovery-server
-      - api-gateway
+      POSTGRES_DB: inventory
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /data/postgres
+    volumes:
+      - ./DockerVolumes/postgres-inventory:/data/postgres
+    expose:
+      - "5432"
+    ports:
+      - "5432:5432"
+    command: -p 5432
+    restart: always
 
-    ## Product-Service Docker Compose Config
-
-  ##product service
-  product-service:
-      container_name: product-service
-      image: shaileshrakhade/product-service:latest
-      environment:
-        - SPRING_PROFILES_ACTIVE=docker
-      depends_on:
-        - mongo
-        - discovery-server
-        - api-gateway
-
-  ## Order-Service Docker Compose Config
-  order-service:
-    container_name: order-service
-    image: shaileshrakhade/order-service:latest
+  # Mysql DB for authentication microservice
+  mysql-auth:
+    container_name: mysql-auth
+    image: mysql:9.0
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-#      - option if we want to override from property file we can pass as command
-#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-order:5431/order-service
-    depends_on:
-      - mysql-order
-#      - broker
-#      - zipkin
-      - discovery-server
-      - api-gateway
+      MYSQL_DATABASE: authentication
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./DockerVolumes/mysql-auth:/var/lib/mysql
+    ports:
+      - "33061:3306"
+    expose:
+      - "3306"
+    restart: always
 
-  ## Inventory-Service Docker Compose Config
-  inventory-service:
-    container_name: inventory-service
-    image: shaileshrakhade/inventory-service:latest
+  # Mysql DB for order microservice
+  mysql-order:
+    container_name: mysql-order
+    image: mysql:9.0
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-#      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-inventory:5432/inventory-service
-    depends_on:
-      - mysql-inventory
-      - discovery-server
-      - api-gateway
+      MYSQL_DATABASE: order
+      MYSQL_USER: mysql
+      MYSQL_PASSWORD: mysql
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./DockerVolumes/mysql-order:/var/lib/mysql
+    ports:
+      - "33062:3306"
+    expose:
+      - "3306"
+    restart: always
 
-#  ## Notification-Service Docker Compose Config
-#  notification-service:
-#    container_name: notification-service
-#    image: shaileshrakhade/notification-service:latest
-#    environment:
-#      - SPRING_PROFILES_ACTIVE=docker
-#    depends_on:
-#      - zipkin
-#      - broker
-#      - discovery-server
-#      - api-gateway
-#
-#
-#  ## Prometheus is use the actuator endpoint for better matrix of application
-#  prometheus:
-#    image: prom/prometheus:v2.37.1
-#    container_name: prometheus
-#    restart: always
-#    ports:
-#      - "9090:9090"
-#    volumes:
-##      - copy the file from host machine to container
-#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-#    depends_on:
-#      - product-service
-#      - inventory-service
-#      - order-service
-#      - notification-service
-#      - authentication-service
-#
-#  ## grafana is  use Prometheus endpoint & show the matrix of application
-#  grafana:
-#    image: grafana/grafana-oss:8.5.2
-#    container_name: grafana
-#    restart: always
-#    ports:
-#      - "3000:3000"
-#    links:
-#      - prometheus:prometheus
-#    volumes:
-#      - ./DockerVolumes/grafana:/var/lib/grafana
-#    environment:
-#      - GF_SECURITY_ADMIN_USER=admin
-#      - GF_SECURITY_ADMIN_PASSWORD=admin
+  # Mongo (NOSQL) DB for product microservice
+  mongo-product:
+    container_name: mongo-product
+    image: mongo:8.0.0-rc4
+    environment:
+      MONGO_INITDB_DATABASE: product
+      MONGO_INITDB_ROOT_USERNAME : root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    restart: always
+    ports:
+      - "27017:27017"
+    expose:
+      - "27017"
+    volumes:
+      - ./DockerVolumes/mongo-data:/data/db
+
+#=================== Micro-Service Supporter containers ===============================
+
+  ## Zipkin distributed tracing system.
+  # It helps gather timing data needed to troubleshoot latency problems
+  # in service architectures we can track the call hierarchy.
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+
+  ## Prometheus is use the actuator endpoint for better matrix of application
+  # an open-source systems monitoring and alerting toolkit
+  prometheus:
+    image: prom/prometheus:v2.37.1
+    container_name: prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+  #     - copy the file from host machine to container
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  ## grafana is  use Prometheus endpoint & show the matrix of application
+  # Grafana helps you collect, correlate, and visualize data with beautiful dashboards
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    links:
+      - prometheus:prometheus
+    volumes:
+      - ./DockerVolumes/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+
+  ## ZooKeeper provides a set of primitives, such as locks, barriers, and queues,
+  # that can be used to coordinate the actions of nodes in a distributed system
+  # It also provides features such as leader election, fail over, and recovery, which can help ensure that the system is resilient to failures
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  ## broker is used for async communication here we use kafka broker
+  # A Kafka broker is a single instance or node in the Kafka system.
+  # It is in charge of receiving incoming messages, storing them, and serving them to consumers.
+  kafka-broker:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka-broker
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka-broker:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
